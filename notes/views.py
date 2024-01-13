@@ -1,5 +1,4 @@
-from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework import status
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
@@ -7,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import authenticate, login, logout
 
 # Create your views here.
 
@@ -22,10 +22,24 @@ class RegisterUser(APIView):
             return Response({'token': token.key, 'user': serializer.data})
         return Response({'status': 403, 'error': serializer.errors, 'message': 'something went wrong'})
 
-# class LoginUser(APIView):
-#     def post(self, request):
-#         serializers = UserSerializer(data=request.data)
+class LoginUser(APIView):
+    def post(self, request):
+        user = authenticate(
+            username=request.data.get("username"),
+            password=request.data.get("password")
+            )
+        if user is not None:
+            try:
+                token = Token.objects.get(user_id=user.id)
+            except Token.DoesNotExist:
+                token = Token.objects.create(user=user)
+            return Response({'token': token.key, 'user': user.username})
+        return Response({'status': 401,'message': "unautherised user"})
         
+class LogoutUser(APIView):
+    def get(self, request):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
 
 class NotesAPI(APIView):
     authentication_classes = [TokenAuthentication]
