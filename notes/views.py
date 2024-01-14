@@ -7,12 +7,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate, login, logout
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 # Create your views here.
 
 class RegisterUser(APIView):
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -25,7 +25,7 @@ class RegisterUser(APIView):
         return Response({'status': 403, 'error': serializer.errors, 'message': 'something went wrong'})
 
 class LoginUser(APIView):
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def post(self, request):
         user = authenticate(
             username=request.data.get("username"),
@@ -47,7 +47,7 @@ class LogoutUser(APIView):
 class NotesAPI(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def get(self, request):
         user = request.user
         notes_objs = Note.objects.filter(owner=user)
@@ -67,7 +67,7 @@ class NotesAPI(APIView):
 class NotesAPIByID(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
     def get(self, request, id):
         try:
             note_obj = Note.objects.filter(id = id, owner = request.user)
